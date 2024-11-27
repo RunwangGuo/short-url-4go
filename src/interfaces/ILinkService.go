@@ -5,12 +5,12 @@ import (
 )
 
 type ILinkService interface {
-	//FindByOriginalURL(db *gorm.DB, url string) (*models.Link, error)
+	Generate(urls []string, expiredTs int64) (map[string]string, error)
+	FindByOriginalUrl(originalUrl string) (*models.Link, error) //根据原始链接查找记录
 	CheckShortIDUsed(shortID string) (bool, error)
 	FindByShortID(shortId string) (*models.Link, error)
 	Create(data *models.Link) error
-	Search(keyword string, page, size int) ([]models.Link, int64, error)
-	//UpdateStatus(targets []string, status int16) error
+	Search(keyword string, page, size int) ([]models.Link, int, map[string]int64, error)
 	UpdateStatus(targets []string, status string) error
 	UpdateExpired(targets []string, expiredTs int64) error
 	UpdateRemark(targets []string, remark string) error

@@ -13,7 +13,6 @@ import (
 
 type LinkService struct {
 	DB *gorm.DB
-	interfaces.IDataAccessLayer
 	interfaces.ICacheLayer
 	EnvVariables *config.Config
 	zap          *zap.Logger
