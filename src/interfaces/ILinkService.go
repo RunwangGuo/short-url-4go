@@ -10,7 +10,8 @@ type ILinkService interface {
 	CheckShortIDUsed(shortID string) (bool, error)
 	FindByShortID(shortId string) (*models.Link, error)
 	Create(data *models.Link) error
-	Search(keyword string, page, size int) ([]models.Link, int, map[string]int64, error)
+	Search(keyword string, page, size int) ([]models.Link, int, error)
+	//Search(keyword string, page, size int) ([]models.Link, int, map[string]int64, error)
 	UpdateStatus(targets []string, status string) error
 	UpdateExpired(targets []string, expiredTs int64) error
 	UpdateRemark(targets []string, remark string) error

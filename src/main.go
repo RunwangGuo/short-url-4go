@@ -1,49 +1,31 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"log"
 	"short-url-rw-github/src/config"
-	"short-url-rw-github/src/controllers"
 )
 
 func main() {
-	// 初始化配置、数据库和缓存
-	cfg := config.InitConfig()
-	config.InitDB(cfg)
-	config.InitCache(cfg)
+	//initialize logger
+	config.InitializeLogger()
 
-	app := iris.New()
+	//initialize env variables
+	config.LoadEnvVariables()
 
-	generateController := controllers.GenerateController{IGenerateService, EnvVariables}
+	//initialize DB
+	config.MySQL().InitMySQLConnection()
+	config.MySQL().InitTables()
 
-	// 路由设置
-	app.Get("/{short_id:string}", controllers.Redirect)
-	app.Post("/api/generate", generateController.GenerateController(ctx))
-	app.Post("/api/status", controllers.ChangeStatus)
-	app.Post("/api/expired", controllers.ChangeExpired)
+	//initialize gcache
+	config.Gcache().InitGCache()
+
+	//initialize api routes
+	//app := iris.New()
+	//app := Router().InitRouter(config.DynamoDB().(*config.DBClientHandler).DBClient, config.Redis().(*config.RedisHandler).RedisClient)
+	app := Router().InitRouter(config.MySQL().(*config.MySQLHandler).DBClient, config.Gcache().(*config.GCacheHandler).Cache)
 
 	// 启动服务
-	if err := app.Listen(":" + cfg.Port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	err := app.Listen(":" + config.EnvVariables.Port)
+	if err != nil {
+		panic("unable to start server")
 	}
 }
-
-/*	// 初始化存储库
-	linkRepo := repositories.NewLinkRepository(db)
-	cacheRepo := repositories.NewCacheRepository(1000) // 使用 gcache，容量为 1000
-
-	// 初始化服务
-	linkService := services.NewLinkService(linkRepo, cacheRepo)
-
-	// 初始化控制器
-	controller := &controllers.ChangeExpiredController{
-		Service: linkService,
-		Token:   "your-secret-token",
-	}
-
-	// 创建 Iris 应用
-	app := iris.New()
-
-	// 注册路由
-	routes.RegisterRoutes(app, controller)*/

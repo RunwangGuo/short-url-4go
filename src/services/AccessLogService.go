@@ -1,15 +1,17 @@
 package services
 
 import (
-	"gorm.io/gorm"
+	"go.uber.org/zap"
 	"net/http"
+	"short-url-rw-github/src/interfaces"
 	"short-url-rw-github/src/models"
 	"time"
 )
 
 // AccessLogService 提供对 AccessLog 的操作
 type AccessLogService struct {
-	DB *gorm.DB
+	interfaces.IDataAccessLayer
+	Logger *zap.Logger
 }
 
 // RecordAccessLog 日志写入逻辑

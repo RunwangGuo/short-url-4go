@@ -15,7 +15,7 @@ import (
 type LinkController struct {
 	interfaces.ILinkService
 	interfaces.IAccessLogService
-	zap *zap.Logger
+	Logger *zap.Logger
 }
 
 func (l *LinkController) Redirect(ctx iris.Context) {
@@ -29,14 +29,14 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 	// 异步记录访问日志
 	go func() {
 		if err := l.RecordAccessLog(shortID, ctx.Request().Header); err != nil {
-			l.zap.Error("Failed to record access log", zap.Error(err))
+			l.Logger.Error("Failed to record access log", zap.Error(err))
 		}
 	}()
 
 	// 获取重定向URL
 	redirectURL, template, err := l.GetRedirectURL(shortID)
 	if err != nil {
-		l.zap.Error("Failed to get redirect URL", zap.String("short_id", shortID), zap.Error(err))
+		l.Logger.Error("Failed to get redirect URL", zap.String("short_id", shortID), zap.Error(err))
 	}
 
 	// 根据结果返回响应
@@ -56,7 +56,7 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 	ctx.Redirect(redirectURL, http.StatusTemporaryRedirect)
 }
 
-func (l *LinkController) GenerateController(ctx iris.Context) {
+func (l *LinkController) Generate(ctx iris.Context) {
 	// 校验 Token
 	headerToken := ctx.GetHeader("Authorization")
 	if headerToken == "" || headerToken != config.EnvVariables.Token {
@@ -89,7 +89,7 @@ func (l *LinkController) GenerateController(ctx iris.Context) {
 
 }
 
-func (l *LinkController) search(ctx iris.Context) {
+func (l *LinkController) Search(ctx iris.Context) {
 
 	// 获取查询参数
 	keyword := ctx.URLParamDefault("keyword", "")
@@ -127,7 +127,7 @@ func (l *LinkController) search(ctx iris.Context) {
 	})
 }
 
-func (l *LinkController) ChangeStatusController(ctx iris.Context) {
+func (l *LinkController) ChangeStatus(ctx iris.Context) {
 	// 验证Token
 	headerToken := ctx.GetHeader("Authorization")
 	if headerToken != config.EnvVariables.Token {

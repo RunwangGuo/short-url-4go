@@ -14,10 +14,9 @@ import (
 )
 
 type LinkService struct {
-	DB *gorm.DB
+	interfaces.IDataAccessLayer
 	interfaces.ICacheLayer
-	interfaces.IValidURL
-	zap *zap.Logger
+	Logger *zap.Logger
 }
 
 // FindByOriginalURL 根据原始链接查找记录
@@ -47,7 +46,7 @@ func (l *LinkService) Generate(urls []string, expiredTs int64) (map[string]strin
 		url = strings.TrimSpace(url)
 
 		// 验证URL合法性
-		if !l.IsValidURL(url) {
+		if !utils.IsValidURL(url) {
 			return nil, errors.New("请提供正确的链接")
 		}
 
@@ -167,39 +166,39 @@ func (l *LinkService) GetRedirectURL(shortID string) (string, string, error) {
 	// 1. 查询缓存
 	value, err := l.Get(shortID)
 	if err != nil {
-		l.zap.Error("Cache error", zap.String("short_id", shortID), zap.Error(err))
+		l.Logger.Error("Cache error", zap.String("short_id", shortID), zap.Error(err))
 		return value, "", nil
 	}
 
 	// 2 查询数据库
 	link, err := l.FindByShortID(shortID)
 	if err != nil {
-		l.zap.Error("Database error", zap.String("short_id", shortID), zap.Error(err))
+		l.Logger.Error("Database error", zap.String("short_id", shortID), zap.Error(err))
 		return "", "", err
 	}
 
 	if link == nil {
-		l.zap.Warn("short ID not found", zap.String("short_id", shortID))
+		l.Logger.Warn("short ID not found", zap.String("short_id", shortID))
 		l.Set(shortID, "")
 		return "", "error/404.html", nil
 	}
 
 	// 3 检查链接状态
 	if link.Status == models.LinkStatusDisabled {
-		l.zap.Info("Link disabled", zap.String("short_id", shortID))
+		l.Logger.Info("Link disabled", zap.String("short_id", shortID))
 		l.Set(shortID, "")
 		return "", "disabled.html", nil
 	}
 
 	if link.ExpiredTs > 0 && link.ExpiredTs < time.Now().UnixMilli() {
-		l.zap.Info("Link expired", zap.String("short_id", shortID))
+		l.Logger.Info("Link expired", zap.String("short_id", shortID))
 		l.Set(shortID, "")
 		return "", "expired.html", nil
 	}
 
 	// 4 缓存结果并返回
 	l.Set(shortID, link.OriginalURL)
-	l.zap.Info("Redirect URL found", zap.String("short_id", shortID), zap.String("url", link.OriginalURL))
+	l.Logger.Info("Redirect URL found", zap.String("short_id", shortID), zap.String("url", link.OriginalURL))
 	return link.OriginalURL, "", nil
 }
 
