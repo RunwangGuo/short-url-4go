@@ -26,6 +26,8 @@ type Config struct {
 	AccessLog     bool
 }
 
+var EnvVariables Config
+
 func InitConfig() Config {
 	return Config{
 		Port:          getEnv("PORT", "80"),

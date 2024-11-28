@@ -1,4 +1,4 @@
-package impl
+package services
 
 import (
 	"github.com/kataras/iris/v12/x/errors"
@@ -8,19 +8,150 @@ import (
 	"short-url-rw-github/src/config"
 	"short-url-rw-github/src/interfaces"
 	"short-url-rw-github/src/models"
+	"short-url-rw-github/src/utils"
+	"strings"
 	"time"
 )
 
 type LinkService struct {
 	DB *gorm.DB
-	interfaces.IDataAccessLayer
 	interfaces.ICacheLayer
-	EnvVariables *config.Config
-	zap          *zap.Logger
+	interfaces.IValidURL
+	zap *zap.Logger
 }
 
 // FindByOriginalURL 根据原始链接查找记录
-//func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error)
+func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
+	var link models.Link
+	err := l.DB.Where("original_url = ?", url).First(&link).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[data access layer] no record found for original_url: %s", url)
+			return nil, nil // 没有找到记录，返回 nil
+		}
+		log.Printf("[data access layer] find_by_original_url error for url %s: %v", url, err)
+		return nil, err // 数据库查询出错
+	}
+	return &link, nil
+}
+
+func (l *LinkService) Generate(urls []string, expiredTs int64) (map[string]string, error) {
+
+	// 设置默认过期时间
+	if expiredTs == 0 {
+		expiredTs = time.Now().AddDate(0, 0, 7).Unix()
+	}
+
+	results := make(map[string]string)
+	for _, url := range urls {
+		url = strings.TrimSpace(url)
+
+		// 验证URL合法性
+		if !l.IsValidURL(url) {
+			return nil, errors.New("请提供正确的链接")
+		}
+
+		// 检查数据库是否已有记录
+		existingLink, err := l.FindByOriginalURL(url)
+		if err == nil && existingLink != nil {
+			results[utils.MD5Hex(url)] = config.EnvVariables.Origin + "/" + existingLink.ShortID
+			continue
+		}
+
+		// 生成短链接
+		shortID, err := l.generateUniqueShortID()
+		if err != nil {
+			return nil, err
+		}
+
+		// 保存到数据库
+		link := &models.Link{
+			ID:          0,
+			ShortID:     shortID,
+			OriginalURL: url,
+			ExpiredTs:   expiredTs,
+			Status:      0,
+			Remark:      nil,
+			CreateTime:  time.Now(),
+		}
+		if err := l.Create(link); err != nil {
+			return nil, err
+		}
+		results[utils.MD5Hex(url)] = config.EnvVariables.Origin + "/" + link.ShortID
+	}
+	return results, nil
+}
+
+// 生成短链接并存入数据库
+func (l *LinkService) generateToDB(url string, expiredTs int64) (string, error) {
+	// 检查数据库中是否已有对应的原始链接
+	existingLink, err := l.FindByOriginalURL(url)
+	if err == nil && existingLink != nil {
+		return existingLink.ShortID, nil
+	}
+	// 生成短链接ID
+	shortID := utils.GenerateShortID()
+	for i := 0; i < 3; i++ {
+		isUsed, _ := l.CheckShortIDUsed(shortID)
+		if isUsed {
+			shortID = utils.GenerateShortID()
+		} else {
+			break
+		}
+		if i == 2 {
+			return "", errors.New("短链接生成冲突")
+		}
+	}
+
+	var link *models.Link
+	// 保存到数据库
+	if err := l.Create(link); err != nil {
+		return "", err
+	}
+	return shortID, nil
+}
+
+// 生成唯一短链接
+func (l *LinkService) generateUniqueShortID() (string, error) {
+	for i := 0; i < 3; i++ {
+		shortID := utils.GenerateShortID()
+		isUsed, err := l.CheckShortIDUsed(shortID)
+		if err != nil {
+			return "", err
+		}
+		if !isUsed {
+			return shortID, nil
+		}
+	}
+	return "", errors.New("短链接生成冲突")
+}
+
+// SearchService 查询链接及分页信息
+func (l *LinkService) SearchService(keyword string, page, size int) ([]models.Link, int64, map[string]int64, error) {
+	if page <= 0 || size <= 0 {
+		return nil, 0, nil, errors.New("invalid pagination parameters")
+	}
+
+	// 查询链接信息
+	links, total, err := l.Search(keyword, page, size)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+
+	// 查询访问记录
+	hitsMap := make(map[string]int64)
+	if config.EnvVariables.AccessLog {
+		shortIDs := make([]string, len(links))
+		for i, link := range links {
+			shortIDs[i] = link.ShortID
+		}
+		hitsMap, err := l.BatchQueryHits(shortIDs)
+		if err != nil {
+			return nil, 0, nil, err
+		}
+	}
+	return links, total, hitsMap, nil
+}
 
 func (l *LinkService) GetRedirectURL(shortID string) (string, string, error) {
 	/*	// 1 查询缓存

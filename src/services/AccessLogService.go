@@ -1,10 +1,8 @@
-package impl
+package services
 
 import (
 	"gorm.io/gorm"
 	"net/http"
-	"short-url-rw-github/src/config"
-	"short-url-rw-github/src/interfaces"
 	"short-url-rw-github/src/models"
 	"time"
 )
@@ -12,17 +10,6 @@ import (
 // AccessLogService 提供对 AccessLog 的操作
 type AccessLogService struct {
 	DB *gorm.DB
-	interfaces.IDataAccessLayer
-	EnvVariables *config.Config
-}
-
-// Add 方法：将数据插入到数据库中
-func (a *AccessLogService) Add(db *gorm.DB, data models.AccessLog) (*models.AccessLog, error) {
-	// 使用Create方法插入数据
-	if err := db.Create(&data).Error; err != nil {
-		return nil, err
-	}
-	return &data, nil
 }
 
 // RecordAccessLog 日志写入逻辑
