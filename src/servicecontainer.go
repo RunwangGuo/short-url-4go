@@ -25,7 +25,7 @@ func (sc *serviceContainer) InjectLinkController(dbClient interfaces.IDataAccess
 		ILinkService: &services.LinkService{
 			IDataAccessLayer: dbClient,         //injecting db client
 			ICacheLayer:      cache,            //injecting redisClient
-			Logger:           config.ZapLogger, //injecting zaplogger
+			Logger:           config.ZapLogger, //injecting zapLogger
 		},
 		IAccessLogService: &services.AccessLogService{
 			IDataAccessLayer: dbClient,

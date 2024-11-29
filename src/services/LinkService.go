@@ -3,8 +3,6 @@ package services
 import (
 	"github.com/kataras/iris/v12/x/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
-	"log"
 	"short-url-rw-github/src/config"
 	"short-url-rw-github/src/interfaces"
 	"short-url-rw-github/src/models"
@@ -19,7 +17,7 @@ type LinkService struct {
 	Logger *zap.Logger
 }
 
-// FindByOriginalURL 根据原始链接查找记录
+/*// FindByOriginalURL 根据原始链接查找记录
 func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
 	var link models.Link
 	err := l.DB.Where("original_url = ?", url).First(&link).Error
@@ -32,6 +30,74 @@ func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
 		return nil, err // 数据库查询出错
 	}
 	return &link, nil
+}*/
+
+// FindByOriginalURL 根据原始链接查找记录
+func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
+	record, err := l.FindByCondition("original_url = ?", url)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+/*// FindByShortID 根据ShortID查找记录
+func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
+	var link models.Link
+	if err := l.DB.Where("short_id = ?", shortId).First(&link).Error; err != nil {
+		log.Printf("[link service] find_by_short_id: %s error: %v", shortId, err)
+		return nil, err
+	}
+	return &link, nil
+}*/
+
+// FindByShortID 根据ShortID查找记录
+func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
+	record, err := l.FindByCondition("short_id = ?", shortId)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+// CheckShortIDUsed 检查 ShortID 是否已被使用
+/*func (l *LinkService) CheckShortIDUsed(shortID string) (bool, error) {
+	var count int64
+	if err := l.DB.Model(&models.Link{}).Where("short_id = ?", shortID).Count(&count).Error; err != nil {
+		log.Printf("[link service] check_short_id_used: %s error: %v", shortID, err)
+		return false, err
+	}
+	return count > 0, nil
+}*/
+
+// CheckShortIDUsed 检查 ShortID 是否已被使用
+func (l *LinkService) CheckShortIDUsed(shortId string) (bool, error) {
+	record, err := l.FindByCondition("short_id = ?", shortId)
+	if err != nil {
+		return false, err
+	}
+	if record == nil {
+		return false, nil
+	}
+	return true, nil
+}
+
+/*// Create 创建记录
+func (l *LinkService) Create(data *models.Link) error {
+	if err := l.DB.Create(&data).Error; err != nil {
+		log.Printf("[link service] create error: %v", err)
+		return err
+	}
+	return nil
+}*/
+
+// Create 创建记录
+func (l *LinkService) Create(data *models.Link) error {
+	err := l.Create(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (l *LinkService) Generate(urls []string, expiredTs int64) (map[string]string, error) {
@@ -202,35 +268,6 @@ func (l *LinkService) GetRedirectURL(shortID string) (string, string, error) {
 	return link.OriginalURL, "", nil
 }
 
-// CheckShortIDUsed 检查 ShortID 是否已被使用
-func (l *LinkService) CheckShortIDUsed(shortID string) (bool, error) {
-	var count int64
-	if err := l.DB.Model(&models.Link{}).Where("short_id = ?", shortID).Count(&count).Error; err != nil {
-		log.Printf("[link service] check_short_id_used: %s error: %v", shortID, err)
-		return false, err
-	}
-	return count > 0, nil
-}
-
-// FindByShortID 根据ShortID查找记录
-func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
-	var link models.Link
-	if err := l.DB.Where("short_id = ?", shortId).First(&link).Error; err != nil {
-		log.Printf("[link service] find_by_short_id: %s error: %v", shortId, err)
-		return nil, err
-	}
-	return &link, nil
-}
-
-// Create 创建记录
-func (l *LinkService) Create(data *models.Link) error {
-	if err := l.DB.Create(&data).Error; err != nil {
-		log.Printf("[link service] create error: %v", err)
-		return err
-	}
-	return nil
-}
-
 // Search 根据关键字和分页条件查询链接
 func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int, error) {
 	var links []models.Link
@@ -256,17 +293,17 @@ func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int
 	return links, int(total), nil
 }
 
-//// UpdateStatus 更新状态
-//func (l *LinkService) UpdateStatus(targets []string, status string) error {
-//	if len(targets) == 0 {
-//		return nil
-//	}
-//	return l.DB.Model(&models.Link{}).
-//		Where("short_id = ?", targets).
-//		Update("status", status).Error
-//}
+/*// UpdateStatus 更新状态
+func (l *LinkService) UpdateStatus(targets []string, status string) error {
+	if len(targets) == 0 {
+		return nil
+	}
+	return l.DB.Model(&models.Link{}).
+		Where("short_id = ?", targets).
+		Update("status", status).Error
+}*/
 
-// UpdateStatus 批量更新状态
+/*// UpdateStatus 批量更新状态
 func (l *LinkService) UpdateStatus(targets []string, status string) error {
 	if len(targets) == 0 {
 		return errors.New("targets cannot be empty")
@@ -286,9 +323,28 @@ func (l *LinkService) UpdateStatus(targets []string, status string) error {
 		return err
 	}
 	return nil
+}*/
+
+func (l *LinkService) UpdateStatus(targets []string, status models.LinkStatusEnum) error {
+	return l.Update("status", status, "short_id IN ?", targets)
 }
 
-// UpdateExpired 批量更新过期时间
+/*func (l *LinkService) UpdateRemark (targets []string, remark string) error {
+	if err := l.DB.Model(&models.Link{}).
+		Where("short_id IN ?", targets).
+		Update("remark", remark).Error; err != nil {
+		log.Printf("[link service] update_remark error: %v", err)
+		return err
+	}
+	return nil
+}
+*/
+
+func (l *LinkService) UpdateRemark(targets []string, remark string) error {
+	return l.Update("remark", remark, "short_id IN ?", targets)
+}
+
+/*// UpdateExpired 批量更新过期时间
 func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
 
 	// 更新数据库中的过期时间
@@ -307,15 +363,9 @@ func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
 	}
 
 	return nil
-}
+}*/
 
-// UpdateRemark 更新数据库中的备注
-func (l *LinkService) UpdateRemark(targets []string, remark string) error {
-	if err := l.DB.Model(&models.Link{}).
-		Where("short_id IN ?", targets).
-		Update("remark", remark).Error; err != nil {
-		log.Printf("[link service] update_remark error: %v", err)
-		return err
-	}
-	return nil
+// UpdateExpired 批量更新过期时间
+func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
+	return l.Update("expired_ts", expiredTs, "short_id IN ?", targets)
 }
