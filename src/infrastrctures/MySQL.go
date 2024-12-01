@@ -12,7 +12,7 @@ type MySQLClient struct {
 	DB *gorm.DB
 }
 
-func (m *MySQLClient) Create(data models.Link) (*models.Link, error) {
+/*func (m *MySQLClient) Create(data models.Link) error {
 	link := &models.Link{
 		ShortID:     data.ShortID,
 		OriginalURL: data.OriginalURL,
@@ -22,10 +22,33 @@ func (m *MySQLClient) Create(data models.Link) (*models.Link, error) {
 
 	err := m.DB.Create(link).Error
 	if err != nil {
-		return nil, fmt.Errorf("新增记录时发生错误: %v", err)
+		return fmt.Errorf("新增记录时发生错误: %v", err)
 	}
 
-	return link, nil
+	return nil
+}
+
+func (m *MySQLClient) Create(data models.AccessLog) error {
+	accessLog := &models.AccessLog{
+		ShortID:    data.ShortID,
+		ReqHeaders: data.ReqHeaders,
+		CreateTime: data.CreateTime,
+	}
+
+	err := m.DB.Create(accessLog).Error
+	if err != nil {
+		return fmt.Errorf("新增记录时发生错误: %v", err)
+	}
+
+	return nil
+}*/
+
+func (m *MySQLClient) Create(data interface{}) error {
+	err := m.DB.Create(data).Error
+	if err != nil {
+		return fmt.Errorf("新增记录时发生错误: %v", err)
+	}
+	return nil
 }
 
 // Update 通用更新方法

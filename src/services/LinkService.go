@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/kataras/iris/v12/x/errors"
 	"go.uber.org/zap"
+	"net/http"
 	"short-url-4go/src/config"
 	"short-url-4go/src/interfaces"
 	"short-url-4go/src/models"
@@ -32,14 +33,14 @@ func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
 	return &link, nil
 }*/
 
-// FindByOriginalURL 根据原始链接查找记录
+/*// FindByOriginalURL 根据原始链接查找记录
 func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
 	record, err := l.FindByCondition("original_url = ?", url)
 	if err != nil {
 		return nil, err
 	}
 	return record, nil
-}
+}*/
 
 /*// FindByShortID 根据ShortID查找记录
 func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
@@ -51,14 +52,14 @@ func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
 	return &link, nil
 }*/
 
-// FindByShortID 根据ShortID查找记录
+/*// FindByShortID 根据ShortID查找记录
 func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
 	record, err := l.FindByCondition("short_id = ?", shortId)
 	if err != nil {
 		return nil, err
 	}
 	return record, nil
-}
+}*/
 
 // CheckShortIDUsed 检查 ShortID 是否已被使用
 /*func (l *LinkService) CheckShortIDUsed(shortID string) (bool, error) {
@@ -70,7 +71,7 @@ func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
 	return count > 0, nil
 }*/
 
-// CheckShortIDUsed 检查 ShortID 是否已被使用
+/*// CheckShortIDUsed 检查 ShortID 是否已被使用
 func (l *LinkService) CheckShortIDUsed(shortId string) (bool, error) {
 	record, err := l.FindByCondition("short_id = ?", shortId)
 	if err != nil {
@@ -80,7 +81,7 @@ func (l *LinkService) CheckShortIDUsed(shortId string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
-}
+}*/
 
 /*// Create 创建记录
 func (l *LinkService) Create(data *models.Link) error {
@@ -91,14 +92,14 @@ func (l *LinkService) Create(data *models.Link) error {
 	return nil
 }*/
 
-// Create 创建记录
+/*// Create 创建记录
 func (l *LinkService) Create(data *models.Link) error {
 	err := l.Create(data)
 	if err != nil {
 		return err
 	}
 	return nil
-}
+}*/
 
 func (l *LinkService) Generate(urls []string, expiredTs int64) (map[string]string, error) {
 
@@ -218,16 +219,16 @@ func (l *LinkService) SearchService(keyword string, page, size int) ([]models.Li
 	return links, total, hitsMap, nil
 }*/
 
-func (l *LinkService) GetRedirectURL(shortID string) (*string, string, error) {
-	/*	// 1 查询缓存
-		if url, err := l.Get(shortID);{
-			if url != "" {
-				l.zap.Info("Cache hit", zap.String("short_id", shortID), zap.String("url", url))
-				return url, "", nil
-			}
-			l.zap.Warn("Cache hit but URL is invalid", zap.String("short_id", shortID))
-			return "", "error/404.html", nil
-		}*/
+/*func (l *LinkService) GetRedirectURL(shortID string) (*string, string, error) {
+		// 1 查询缓存
+		//if url, err := l.Get(shortID);{
+		//	if url != "" {
+		//		l.zap.Info("Cache hit", zap.String("short_id", shortID), zap.String("url", url))
+		//		return url, "", nil
+		//	}
+		//	l.zap.Warn("Cache hit but URL is invalid", zap.String("short_id", shortID))
+		//	return "", "error/404.html", nil
+		//}
 
 	// 1. 查询缓存
 	value, err := l.Get(shortID)
@@ -266,7 +267,7 @@ func (l *LinkService) GetRedirectURL(shortID string) (*string, string, error) {
 	l.Set(shortID, link.OriginalURL)
 	l.Logger.Info("Redirect URL found", zap.String("short_id", shortID), zap.String("url", link.OriginalURL))
 	return link.OriginalURL, "", nil
-}
+}*/
 
 /*// Search 根据关键字和分页条件查询链接
 func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int, error) {
@@ -292,6 +293,57 @@ func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int
 
 	return links, int(total), nil
 }*/
+
+func (l *LinkService) Redirect(shortID string, headers http.Header) (*string, error) {
+	// 如果启用了访问日志功能，记录请求头信息
+	if config.EnvVariables.AccessLog {
+		go func(shortID string, headers http.Header) {
+			// 将请求头转为字符串
+			var headerString strings.Builder
+			for key, values := range headers {
+				for _, value := range values {
+					headerString.WriteString(key + ": " + value + "\n")
+				}
+			}
+
+			// 记录访问日志
+			accessLog := models.AccessLog{
+				ShortID:    shortID,
+				ReqHeaders: headerString.String(),
+				CreateTime: time.Now(),
+			}
+			if err := l.Create(accessLog); err != nil {
+				l.Logger.Error("Failed to add access log")
+			}
+		}(shortID, headers)
+	}
+
+	// 检查缓存是否存在
+	cache, err := l.Get(shortID)
+	if err != nil && cache != nil {
+		return cache, nil
+	}
+
+	// 查询数据库，获取短链接对应的原始链接
+	record, err := l.FindByCondition("short_id = ?", shortID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查链接是否已经被禁用
+	if record.Status == models.LinkStatusDisabled {
+		return nil, errors.New("link is disabled")
+	}
+
+	// 检查链接是否已经过期
+	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix() {
+		return nil, errors.New("link is expired")
+	}
+
+	// 缓存并返回原始链接
+	_ = l.Set(shortID, record.OriginalURL)
+	return &record.OriginalURL, nil
+}
 
 // Search Search处理逻辑
 func (l *LinkService) Search(params *models.SearchParams) (*models.SearchResponse, error) {

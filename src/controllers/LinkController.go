@@ -8,52 +8,24 @@ import (
 	"short-url-4go/src/config"
 	"short-url-4go/src/interfaces"
 	"short-url-4go/src/models"
-	"short-url-4go/src/utils"
 	"time"
 )
 
 type LinkController struct {
 	interfaces.ILinkService
-	interfaces.IAccessLogService
+	//interfaces.IAccessLogService
 	Logger *zap.Logger
 }
 
 func (l *LinkController) Redirect(ctx iris.Context) {
 	shortID := ctx.Params().Get("short_id")
 
-	// 如果ID中存在其他字符，剔除
-	if len(shortID) > utils.ShortIDLen {
-		shortID = shortID[:utils.ShortIDLen]
-	}
-
-	// 异步记录访问日志
-	go func() {
-		if err := l.RecordAccessLog(shortID, ctx.Request().Header); err != nil {
-			l.Logger.Error("Failed to record access log", zap.Error(err))
-		}
-	}()
-
-	// 获取重定向URL
-	redirectURL, template, err := l.GetRedirectURL(shortID)
+	// 调用服务处理重定向逻辑
+	redirectURL, err := l.ILinkService.Redirect(shortID, ctx.Request().Header)
 	if err != nil {
-		l.Logger.Error("Failed to get redirect URL", zap.String("short_id", shortID), zap.Error(err))
+		_ = ctx.StopWithJSON(iris.StatusInternalServerError, err)
 	}
-
-	// 根据结果返回响应
-	if redirectURL == "" {
-		switch template {
-		case "error/404.html":
-			ctx.NotFound()
-		case "disabled.html":
-			ctx.StatusCode(http.StatusForbidden)
-			ctx.View("disabled.html")
-		case "expired.html":
-			ctx.StatusCode(http.StatusGone)
-			ctx.View("expired.html")
-		}
-		return
-	}
-	ctx.Redirect(redirectURL, http.StatusTemporaryRedirect)
+	ctx.Redirect(*redirectURL, http.StatusTemporaryRedirect)
 }
 
 func (l *LinkController) Generate(ctx iris.Context) {
