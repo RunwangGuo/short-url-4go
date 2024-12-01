@@ -3,10 +3,10 @@ package services
 import (
 	"github.com/kataras/iris/v12/x/errors"
 	"go.uber.org/zap"
-	"short-url-rw-github/src/config"
-	"short-url-rw-github/src/interfaces"
-	"short-url-rw-github/src/models"
-	"short-url-rw-github/src/utils"
+	"short-url-4go/src/config"
+	"short-url-4go/src/interfaces"
+	"short-url-4go/src/models"
+	"short-url-4go/src/utils"
 	"strings"
 	"time"
 )
@@ -191,7 +191,7 @@ func (l *LinkService) generateUniqueShortID() (string, error) {
 	return "", errors.New("短链接生成冲突")
 }
 
-// SearchService 查询链接及分页信息
+/*// SearchService 查询链接及分页信息
 func (l *LinkService) SearchService(keyword string, page, size int) ([]models.Link, int64, map[string]int64, error) {
 	if page <= 0 || size <= 0 {
 		return nil, 0, nil, errors.New("invalid pagination parameters")
@@ -216,9 +216,9 @@ func (l *LinkService) SearchService(keyword string, page, size int) ([]models.Li
 		}
 	}
 	return links, total, hitsMap, nil
-}
+}*/
 
-func (l *LinkService) GetRedirectURL(shortID string) (string, string, error) {
+func (l *LinkService) GetRedirectURL(shortID string) (*string, string, error) {
 	/*	// 1 查询缓存
 		if url, err := l.Get(shortID);{
 			if url != "" {
@@ -268,7 +268,7 @@ func (l *LinkService) GetRedirectURL(shortID string) (string, string, error) {
 	return link.OriginalURL, "", nil
 }
 
-// Search 根据关键字和分页条件查询链接
+/*// Search 根据关键字和分页条件查询链接
 func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int, error) {
 	var links []models.Link
 	var total int64
@@ -291,6 +291,49 @@ func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int
 	}
 
 	return links, int(total), nil
+}*/
+
+// Search Search处理逻辑
+func (l *LinkService) Search(params *models.SearchParams) (*models.SearchResponse, error) {
+	// 获取分页数据
+	paginationResult, err := l.Pagination(params)
+	if err != nil {
+		return nil, err
+	}
+
+	// 初始化访问次数
+	hitsMap := make(map[string]int64)
+	if config.EnvVariables.AccessLog {
+		// 如果启用了访问日志功能，获取访问次数
+		for _, link := range paginationResult.Records {
+			// 获取访问次数
+			hits := l.CountByCondition(models.AccessLog{}, "short_id = ?", link.ShortID)
+			hitsMap[link.ShortID] = hits
+		}
+	}
+
+	// 构造响应数据
+	records := make([]models.SearchRecordItem, len(paginationResult.Records))
+	for i, link := range paginationResult.Records {
+		hits := hitsMap[link.ShortID] // 从 hitsMap 获取访问次数
+		records[i] = models.SearchRecordItem{
+			ID:          link.ID,
+			ShortID:     link.ShortID,
+			OriginalURL: link.OriginalURL,
+			ExpiredTs:   link.ExpiredTs,
+			Status:      link.Status,
+			Remark:      link.Remark,
+			CreateTime:  link.CreateTime,
+			Hits:        hits,
+		}
+	}
+	// 返回最终响应结果
+	return &models.SearchResponse{
+		Records: records,
+		Pages:   paginationResult.Pages,
+		Size:    params.Size,
+	}, nil
+
 }
 
 /*// UpdateStatus 更新状态

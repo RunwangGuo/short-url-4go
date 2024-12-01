@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"short-url-rw-github/src/models"
+	"short-url-4go/src/models"
 )
 
 type ILinkService interface {
@@ -10,7 +10,8 @@ type ILinkService interface {
 	CheckShortIDUsed(shortID string) (bool, error)
 	FindByShortID(shortId string) (*models.Link, error)
 	Create(data *models.Link) error
-	Search(keyword string, page, size int) ([]models.Link, int, error)
+	// Search(keyword string, page, size int) ([]models.Link, int, error)
+	Search(params *models.SearchParams) (*models.SearchResponse, error)
 	// UpdateStatus Search(keyword string, page, size int) ([]models.Link, int, map[string]int64, error)
 	// UpdateStatus(targets []string, status string) error
 	UpdateStatus(targets []string, status models.LinkStatusEnum) error // 最新的

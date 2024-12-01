@@ -1,4 +1,4 @@
-module short-url-rw-github
+module short-url-4go
 
 go 1.22
 

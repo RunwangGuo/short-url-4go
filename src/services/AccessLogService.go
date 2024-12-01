@@ -3,8 +3,8 @@ package services
 import (
 	"go.uber.org/zap"
 	"net/http"
-	"short-url-rw-github/src/interfaces"
-	"short-url-rw-github/src/models"
+	"short-url-4go/src/interfaces"
+	"short-url-4go/src/models"
 	"time"
 )
 
@@ -38,7 +38,7 @@ func (a *AccessLogService) RecordAccessLog(shortID string, headers http.Header) 
 	return nil
 }
 
-// BatchQueryHits 批量查询点击次数
+/*// BatchQueryHits 批量查询点击次数
 func (a *AccessLogService) BatchQueryHits(shortIDs []string) (map[string]int64, error) {
 	hitsMap := make(map[string]int64)
 	if len(shortIDs) == 0 {
@@ -65,4 +65,4 @@ func (a *AccessLogService) BatchQueryHits(shortIDs []string) (map[string]int64, 
 		hitsMap[shortID] = hits
 	}
 	return hitsMap, nil
-}
+}*/

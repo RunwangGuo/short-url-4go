@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12/x/errors"
 	"gorm.io/gorm"
-	"short-url-rw-github/src/models"
+	"math"
+	"short-url-4go/src/models"
 )
 
 type MySQLClient struct {
@@ -49,4 +50,51 @@ func (m *MySQLClient) FindByCondition(condition string, value string) (*models.L
 	}
 
 	return &models.Link{}, nil
+}
+
+// CountByCondition 通用条件计数
+func (m *MySQLClient) CountByCondition(table interface{}, condition string, value string) int64 {
+	var count int64
+	m.DB.Model(&table).Where(condition, value).Count(&count)
+	//m.DB.Model((&User{}).Where(condition, value).Count(&count)
+	return count
+}
+
+// Pagination 获取分页数据
+func (m *MySQLClient) Pagination(params *models.SearchParams) (models.PaginationResult, error) {
+	// 初始化
+	query := m.DB.Model(&models.Link{})
+	if params.Keyword != "" {
+		keyword := "%" + params.Keyword + "%"
+		query = query.Where("short_id LIKE OR original_url LIKE ?", keyword, keyword)
+
+	}
+
+	// 获取总记录数
+	var totalRows int64
+	query.Count(&totalRows)
+
+	// 计算分页参数
+	page := params.Page
+	size := params.Size
+	if page < 1 {
+		page = 1
+	}
+	// 默认每页30条
+	if size < 1 {
+		size = 30
+	}
+
+	offset := (page - 1) * size
+	totalPages := int(math.Ceil(float64(totalRows) / float64(size)))
+
+	// 获取当前页数据
+	//var links []models.Link
+	query.Order("id desc").Limit(size).Offset(offset).Find(&models.Link{})
+
+	// 返回分页结果
+	return models.PaginationResult{
+		Records: []models.Link{},
+		Pages:   totalPages,
+	}, nil
 }

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"short-url-rw-github/src/config"
+	"short-url-4go/src/config"
+	_ "short-url-4go/src/infrastrctures"
 )
 
 func main() {

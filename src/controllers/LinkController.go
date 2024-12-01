@@ -5,10 +5,10 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
-	"short-url-rw-github/src/config"
-	"short-url-rw-github/src/interfaces"
-	"short-url-rw-github/src/models"
-	"short-url-rw-github/src/utils"
+	"short-url-4go/src/config"
+	"short-url-4go/src/interfaces"
+	"short-url-4go/src/models"
+	"short-url-4go/src/utils"
 	"time"
 )
 
@@ -96,35 +96,22 @@ func (l *LinkController) Search(ctx iris.Context) {
 	page := ctx.URLParamIntDefault("page", 1)
 	size := ctx.URLParamIntDefault("size", 30)
 
-	// 调用服务层逻辑
-	links, total, hitsMap, err := l.Search(keyword, page, size)
-	if err != nil {
-		log.Printf("SearchLinks error: %v", err)
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "failed to search links"})
-		return
+	// 构造查询参数
+	params := &models.SearchParams{
+		Keyword: keyword,
+		Page:    page,
+		Size:    size,
 	}
-	// 构造响应数据
-	records := make([]models.SearchRecordItem, len(links))
-	for i, link := range links {
-		records[i] = models.SearchRecordItem{
-			ID:          link.ID,
-			ShortID:     link.ShortID,
-			OriginalURL: link.OriginalURL,
-			ExpiredTs:   link.ExpiredTs,
-			Status:      link.Status,
-			Remark:      link.Remark,
-			CreateTime:  link.CreateTime,
-			Hits:        hitsMap[link.ShortID],
-		}
+
+	// 调用服务层逻辑
+	result, err := l.ILinkService.Search(params)
+	if err != nil {
+		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{"error": err.Error()})
+		return
 	}
 
 	// 返回JSON响应
-	ctx.JSON(iris.Map{
-		"records": records,
-		"pages":   (total + size - 1) / size, //总页数
-		"size":    size,
-	})
+	ctx.JSON(result)
 }
 
 func (l *LinkController) ChangeStatus(ctx iris.Context) {

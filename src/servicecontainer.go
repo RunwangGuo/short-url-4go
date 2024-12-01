@@ -1,10 +1,10 @@
 package main
 
 import (
-	"short-url-rw-github/src/config"
-	"short-url-rw-github/src/controllers"
-	"short-url-rw-github/src/interfaces"
-	"short-url-rw-github/src/services"
+	"short-url-4go/src/config"
+	"short-url-4go/src/controllers"
+	"short-url-4go/src/interfaces"
+	"short-url-4go/src/services"
 	"sync"
 )
 

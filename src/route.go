@@ -5,7 +5,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/accesslog"
 	"io"
 	"os"
-	"short-url-rw-github/src/interfaces"
+	"short-url-4go/src/interfaces"
 	"sync"
 )
 
