@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"github.com/kataras/iris/v12"
 	"go.uber.org/zap"
 	"log"
@@ -46,19 +49,31 @@ func (l *LinkController) Generate(ctx iris.Context) {
 	}
 
 	// 调用Service处理逻辑
-	results, err := l.ILinkService.Generate(params.URLs, params.ExpiredTs)
+	//results, err := l.ILinkService.Generate(params.URLs, params.ExpiredTs)
+	results := make(map[string]string)
+	for _, url := range params.URLs {
+		// 调用服务层生成短链接
+		shortLink, err := l.ILinkService.Generate(url, params.ExpiredTs)
+		if err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			return
+		}
+
+		// 生成md5 hash
+		hash := md5.Sum([]byte(url))
+		results[hex.EncodeToString(hash[:])] = shortLink
+	}
+
+	// 序列化并返回JSON响应
+	resp, err := json.Marshal(results)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString("生成短链接失败")
+		ctx.WriteString("序列化响应失败")
 		return
 	}
-
-	// 返回结果
+	// 设置响应类型为JSON
 	ctx.ContentType("application/json")
-	if err := ctx.JSON(results); err != nil {
-		log.Printf("返回JSON失败：%v\n", err)
-	}
-
+	ctx.Write(resp)
 }
 
 func (l *LinkController) Search(ctx iris.Context) {

@@ -27,10 +27,6 @@ func (sc *serviceContainer) InjectLinkController(dbClient interfaces.IDataAccess
 			ICacheLayer:      cache,            //injecting redisClient
 			Logger:           config.ZapLogger, //injecting zapLogger
 		},
-		IAccessLogService: &services.AccessLogService{
-			IDataAccessLayer: dbClient,
-			Logger:           config.ZapLogger,
-		},
 		Logger: config.ZapLogger,
 	}
 }
