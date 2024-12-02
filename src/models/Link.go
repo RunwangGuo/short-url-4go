@@ -14,9 +14,9 @@ type Link struct {
 	ShortID     string    `json:"short_id" gorm:"column:short_id"`
 	OriginalURL string    `json:"original_url" gorm:"column:original_url"`
 	ExpiredTs   int64     `json:"expired_ts" gorm:"column:expired_ts"`
-	Status      int16     `json:"status" gorm:"column:status"`
-	Remark      *string   `json:"remark" gorm:"column:remark"`
-	CreateTime  time.Time `json:"create_time" gorm:"column:create_time"`
+	Status      int16     `json:"status"`
+	Remark      *string   `json:"remark"`
+	CreateTime  time.Time `json:"create_time"`
 }
 
 type GenerateReq struct {
