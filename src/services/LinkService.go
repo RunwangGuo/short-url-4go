@@ -101,54 +101,43 @@ func (l *LinkService) Create(data *models.Link) error {
 	return nil
 }*/
 
-func (l *LinkService) Generate(urls []string, expiredTs int64) (map[string]string, error) {
+func (l *LinkService) Generate(url string, expiredTs int64) (string, error) {
 
-	// 设置默认过期时间
-	if expiredTs == 0 {
-		expiredTs = time.Now().AddDate(0, 0, 7).Unix()
+	// 检查是否存在相同的原始链接
+	record, err := l.FindByCondition("original_url = ?", url)
+	if err != nil && record != nil && record.ShortID != "" {
+		return record.ShortID, nil
 	}
 
-	results := make(map[string]string)
-	for _, url := range urls {
-		url = strings.TrimSpace(url)
-
-		// 验证URL合法性
-		if !utils.IsValidURL(url) {
-			return nil, errors.New("请提供正确的链接")
+	// 生成短链接ID, 最多尝试3次, 防碰撞
+	var shortID string
+	for i := 0; i < 3; i++ {
+		shortID = utils.GenerateShortID()
+		used, _ := l.FindByCondition("short_id = ?", shortID)
+		if used == nil {
+			break
 		}
-
-		// 检查数据库是否已有记录
-		existingLink, err := l.FindByOriginalURL(url)
-		if err == nil && existingLink != nil {
-			results[utils.MD5Hex(url)] = config.EnvVariables.Origin + "/" + existingLink.ShortID
-			continue
-		}
-
-		// 生成短链接
-		shortID, err := l.generateUniqueShortID()
-		if err != nil {
-			return nil, err
-		}
-
-		// 保存到数据库
-		link := &models.Link{
-			ID:          0,
-			ShortID:     shortID,
-			OriginalURL: url,
-			ExpiredTs:   expiredTs,
-			Status:      0,
-			Remark:      nil,
-			CreateTime:  time.Now(),
-		}
-		if err := l.Create(link); err != nil {
-			return nil, err
-		}
-		results[utils.MD5Hex(url)] = config.EnvVariables.Origin + "/" + link.ShortID
 	}
-	return results, nil
+
+	// 保存短链接到数据库
+	link := &models.Link{
+		//ID:          0,
+		ShortID:     shortID,
+		OriginalURL: url,
+		ExpiredTs:   expiredTs,
+		Status:      0,
+		Remark:      nil,
+		CreateTime:  time.Now(),
+	}
+	err = l.Create(link)
+	if err != nil {
+		return "", err
+	}
+
+	return shortID, nil
 }
 
-// 生成短链接并存入数据库
+/*// 生成短链接并存入数据库
 func (l *LinkService) generateToDB(url string, expiredTs int64) (string, error) {
 	// 检查数据库中是否已有对应的原始链接
 	existingLink, err := l.FindByOriginalURL(url)
@@ -175,9 +164,9 @@ func (l *LinkService) generateToDB(url string, expiredTs int64) (string, error) 
 		return "", err
 	}
 	return shortID, nil
-}
+}*/
 
-// 生成唯一短链接
+/*// 生成唯一短链接
 func (l *LinkService) generateUniqueShortID() (string, error) {
 	for i := 0; i < 3; i++ {
 		shortID := utils.GenerateShortID()
@@ -190,7 +179,7 @@ func (l *LinkService) generateUniqueShortID() (string, error) {
 		}
 	}
 	return "", errors.New("短链接生成冲突")
-}
+}*/
 
 /*// SearchService 查询链接及分页信息
 func (l *LinkService) SearchService(keyword string, page, size int) ([]models.Link, int64, map[string]int64, error) {
