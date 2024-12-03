@@ -57,17 +57,16 @@ type SearchRecordItem struct {
 }
 
 type ChangeStatusReq struct {
-	Targets []string `json:"s"`
-	//Status  LinkStatusEnum `json:"status"`
-	Status LinkStatusEnum `json:"status"`
+	Targets []string       `json:"targets"` // 要更新状态的短链接列表
+	Status  LinkStatusEnum `json:"status"`  // 新状态
 }
 
 type ChangeExpiredReq struct {
-	Targets []string `json:"targets"` // 短链接的ID列表
+	Targets []string `json:"targets"` // 要更新过期时间的短链接列表
 	Expired int64    `json:"expired"` // 新的过期时间戳
 }
 
 type RemarkReq struct {
-	Targets []string `json:"targets"` //短链接ID列表
+	Targets []string `json:"targets"` // 短链接ID列表
 	Remark  string   `json:"remark"`  // 新的备注内容
 }

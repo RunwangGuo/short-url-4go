@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"github.com/kataras/iris/v12"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
-	"short-url-4go/src/config"
 	"short-url-4go/src/interfaces"
 	"short-url-4go/src/models"
 	"time"
@@ -20,7 +18,18 @@ type LinkController struct {
 }
 
 func (l *LinkController) Redirect(ctx iris.Context) {
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
+	}
+
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
+
 	shortID := ctx.Params().Get("short_id")
+	l.Logger.Info("Request ShortID", zap.String("shortID", shortID))
 
 	// 调用服务处理重定向逻辑
 	redirectURL, err := l.ILinkService.Redirect(shortID, ctx.Request().Header)
@@ -121,61 +130,64 @@ func (l *LinkController) Search(ctx iris.Context) {
 }
 
 func (l *LinkController) ChangeStatus(ctx iris.Context) {
-	// 验证Token
-	headerToken := ctx.GetHeader("Authorization")
-	if headerToken != config.EnvVariables.Token {
-		ctx.StatusCode(iris.StatusBadRequest)
-		_, _ = ctx.WriteString("请求参数错误")
-		return
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
 	}
 
-	// 解析请求体
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
+
+	// 定义结构体实例
 	var req models.ChangeStatusReq
+
+	// 解析请求体
 	if err := ctx.ReadJSON(&req); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		_, _ = ctx.WriteString("请求参数错误")
+		ctx.JSON(iris.Map{"error": "无效的请求体" + err.Error()})
 		return
 	}
 
 	// 调用service更新状态
 	err := l.UpdateStatus(req.Targets, req.Status)
 	if err != nil {
-		log.Printf("ChangeStatus error: %v", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
-		_, _ = ctx.WriteString("状态更新失败")
+		ctx.JSON(iris.Map{"error": "状态更新失败" + err.Error()})
 		return
 	}
 
 	// 返回成功响应
-	err = ctx.JSON(iris.Map{"message": "状态更新成功"})
-	if err != nil {
-		return
-	}
+	ctx.JSON(iris.Map{"message": "状态更新成功"})
 }
 
 // ChangeExpired 修改过期时间的控制器
 func (l *LinkController) ChangeExpired(ctx iris.Context) {
-
-	// 校验Token
-	headerToken := ctx.GetHeader("Authorization")
-	if headerToken == "" || headerToken != config.EnvVariables.Token {
-		ctx.StatusCode(iris.StatusBadRequest)
-		_, _ = ctx.WriteString("请提供正确的安全码")
-		return
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
 	}
 
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
+
+	// 定义结构体实例
+	var req models.ChangeExpiredReq
+
 	// 解析请求体
-	var params models.ChangeExpiredReq
-	if err := ctx.ReadJSON(&params); err != nil {
+	if err := ctx.ReadJSON(&req); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		_, _ = ctx.WriteString("参数解析错误")
+		ctx.JSON(iris.Map{"error": "无效的请求体: " + err.Error()})
 		return
 	}
 
 	// 校验过期时间是否合理
-	if params.Expired < time.Now().Unix() {
+	if req.Expired < time.Now().Unix() {
 		ctx.StatusCode(iris.StatusBadRequest)
-		_, _ = ctx.WriteString("请提供不小于当前日期的过期时间")
+		ctx.JSON(iris.Map{"error": "请提供不小于当前日期的过期时间"})
 		return
 	}
 
@@ -187,50 +199,48 @@ func (l *LinkController) ChangeExpired(ctx iris.Context) {
 		}*/
 
 	// 调用Service处理业务逻辑
-	err := l.UpdateExpired(params.Targets, params.Expired)
+	err := l.UpdateExpired(req.Targets, req.Expired)
 	if err != nil {
-		log.Printf("[ChangeExpiredController] UpdateExpired error:%+v", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
-		_, _ = ctx.WriteString("更新过期时间失败")
+		ctx.JSON(iris.Map{"error": "过期时间更新失败" + err.Error()})
 		return
 	}
 
 	// 返回成功响应
-	ctx.ContentType("application/json")
-	_, err = ctx.WriteString("{}")
-	if err != nil {
-		return
-	}
+	ctx.JSON(iris.Map{"message": "过期时间更新成功"})
 }
 
 // Remark 修改备注的控制器
 func (l *LinkController) Remark(ctx iris.Context) {
-	// 校验 Token
-	headerToken := ctx.GetHeader("Authorization")
-	if headerToken == "" || headerToken != config.EnvVariables.Token {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("请提供正确的安全码")
-		return
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
 	}
 
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
+
+	// 定义结构体实例
+	var req models.RemarkReq
+
 	// 解析请求体
-	var params models.RemarkReq
-	if err := ctx.ReadJSON(&params); err != nil {
+	if err := ctx.ReadJSON(&req); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("参数解析错误")
+		ctx.JSON(iris.Map{"error": "无效的请求体: " + err.Error()})
 		return
 	}
 
 	// 调用Service处理逻辑
 	//results, err := r.IGenerateService.Generate(params.URLs, params.ExpiredTs)
-	err := l.ILinkService.UpdateRemark(params.Targets, params.Remark)
+	err := l.ILinkService.UpdateRemark(req.Targets, req.Remark)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString("更新备注失败")
+		ctx.JSON(iris.Map{"error": "更新备注失败: " + err.Error()})
 		return
 	}
 
 	// 返回成功响应
-	ctx.ContentType("application/json")
-	ctx.WriteString("{}")
+	ctx.JSON(iris.Map{"message": "备注更新成功"})
 }

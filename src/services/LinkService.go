@@ -410,7 +410,7 @@ func (l *LinkService) UpdateStatus(targets []string, status string) error {
 }*/
 
 func (l *LinkService) UpdateStatus(targets []string, status models.LinkStatusEnum) error {
-	return l.Update("status", status, "short_id IN ?", targets)
+	return l.Update(&models.Link{}, "status", status, "short_id IN ?", targets)
 }
 
 /*func (l *LinkService) UpdateRemark (targets []string, remark string) error {
@@ -425,7 +425,7 @@ func (l *LinkService) UpdateStatus(targets []string, status models.LinkStatusEnu
 */
 
 func (l *LinkService) UpdateRemark(targets []string, remark string) error {
-	return l.Update("remark", remark, "short_id IN ?", targets)
+	return l.Update(&models.Link{}, "remark", remark, "short_id IN ?", targets)
 }
 
 /*// UpdateExpired 批量更新过期时间
@@ -451,5 +451,5 @@ func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
 
 // UpdateExpired 批量更新过期时间
 func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
-	return l.Update("expired_ts", expiredTs, "short_id IN ?", targets)
+	return l.Update(&models.Link{}, "expired_ts", expiredTs, "short_id IN ?", targets)
 }

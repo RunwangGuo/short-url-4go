@@ -52,8 +52,8 @@ func (m *MySQLClient) Create(data interface{}) error {
 }
 
 // Update 通用更新方法
-func (m *MySQLClient) Update(column string, value interface{}, query string, values ...interface{}) error {
-	return m.DB.Model(&models.Link{}).
+func (m *MySQLClient) Update(model interface{}, column string, value interface{}, query string, values ...interface{}) error {
+	return m.DB.Model(model).
 		Where(query, values...).
 		Update(column, value).
 		Error

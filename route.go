@@ -52,12 +52,12 @@ func (router *router) InitRouter(dbClient interfaces.IDataAccessLayer, cache int
 
 	//app.Get("/healthcheck", healthCheckController.CheckServerHealthCheck)
 	//app.Post("/v1/shorten", middleware.CheckJWT(), shortifyWriterController.WriterController)
-	app.Post("/api/redirect", LinkController.Redirect)
+	app.Get("/{short_id}", LinkController.Redirect)
 	app.Get("/api/search", middleware.CheckApiSecret(), LinkController.Search)
 	app.Post("/api/generate", middleware.CheckApiSecret(), middleware.CheckToken(), LinkController.Generate)
-	app.Post("/api/change_status", LinkController.ChangeStatus)
-	app.Post("/api/change_expired", LinkController.ChangeExpired)
-	app.Post("/api/remark", LinkController.Remark)
+	app.Post("/api/status", middleware.CheckApiSecret(), middleware.CheckToken(), LinkController.ChangeStatus)
+	app.Post("/api/expired", middleware.CheckApiSecret(), middleware.CheckToken(), LinkController.ChangeExpired)
+	app.Post("/api/remark", middleware.CheckApiSecret(), middleware.CheckToken(), LinkController.Remark)
 
 	return app
 }
