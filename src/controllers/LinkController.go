@@ -41,11 +41,24 @@ func (l *LinkController) Generate(ctx iris.Context) {
 	// 将请求头记录到日志
 	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
 
-	// 解析请求体
+	// 定义结构体实例
 	var params models.GenerateReq
 
+	// 解析请求体
+	if err := ctx.ReadJSON(&params); err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "无效的请求体" + err.Error()})
+	}
+
+	// 检查URLS是否为空
+	if len(params.URLs) == 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "请求体中必须包含 URLs"})
+		return
+	}
+
+	// 使用解析出的数据
 	// 调用Service处理逻辑
-	//results, err := l.ILinkService.Generate(params.URLs, params.ExpiredTs)
 	results := make(map[string]string)
 	for _, url := range params.URLs {
 		l.Logger.Info("请求生成短链的长链接是" + url)
