@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"short-url-4go/src/interfaces"
+	"short-url-4go/src/middleware"
 	"sync"
 )
 
@@ -33,7 +34,7 @@ func (router *router) InitRouter(dbClient interfaces.IDataAccessLayer, cache int
 				"POST, PUT, PATCH, DELETE")
 
 			ctx.Header("Access-Control-Allow-Headers",
-				"Access-Control-Allow-Origin,Content-Type,Authorization")
+				"Access-Control-Allow-Origin,Content-Type,Authorization,api-secret,token")
 
 			ctx.Header("Access-Control-Max-Age",
 				"86400")
@@ -51,12 +52,12 @@ func (router *router) InitRouter(dbClient interfaces.IDataAccessLayer, cache int
 
 	//app.Get("/healthcheck", healthCheckController.CheckServerHealthCheck)
 	//app.Post("/v1/shorten", middleware.CheckJWT(), shortifyWriterController.WriterController)
-	app.Post("/redirect", LinkController.Redirect)
-	app.Post("/search", LinkController.Search)
-	app.Post("/generate", LinkController.Generate)
-	app.Post("/change_status", LinkController.ChangeStatus)
-	app.Post("/change_expired", LinkController.ChangeExpired)
-	app.Post("/remark", LinkController.Remark)
+	app.Post("/api/redirect", LinkController.Redirect)
+	app.Get("/api/search", middleware.CheckApiSecret(), LinkController.Search)
+	app.Post("/api/generate", middleware.CheckApiSecret(), middleware.CheckToken(), LinkController.Generate)
+	app.Post("/api/change_status", LinkController.ChangeStatus)
+	app.Post("/api/change_expired", LinkController.ChangeExpired)
+	app.Post("/api/remark", LinkController.Remark)
 
 	return app
 }

@@ -90,7 +90,6 @@ func (m *MySQLClient) Pagination(params *models.SearchParams) (models.Pagination
 	if params.Keyword != "" {
 		keyword := "%" + params.Keyword + "%"
 		query = query.Where("short_id LIKE OR original_url LIKE ?", keyword, keyword)
-
 	}
 
 	// 获取总记录数
@@ -112,12 +111,12 @@ func (m *MySQLClient) Pagination(params *models.SearchParams) (models.Pagination
 	totalPages := int(math.Ceil(float64(totalRows) / float64(size)))
 
 	// 获取当前页数据
-	//var links []models.Link
-	query.Order("id desc").Limit(size).Offset(offset).Find(&models.Link{})
+	var links []models.Link
+	query.Order("id desc").Limit(size).Offset(offset).Find(&links)
 
 	// 返回分页结果
 	return models.PaginationResult{
-		Records: []models.Link{},
+		Records: links,
 		Pages:   totalPages,
 	}, nil
 }

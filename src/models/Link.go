@@ -10,13 +10,13 @@ const (
 )
 
 type Link struct {
-	ID          uint64    `json:"id" gorm:"primaryKey;column:id"`
-	ShortID     string    `json:"short_id" gorm:"column:short_id"`
-	OriginalURL string    `json:"original_url" gorm:"column:original_url"`
-	ExpiredTs   int64     `json:"expired_ts" gorm:"column:expired_ts"`
-	Status      int16     `json:"status" gorm:"column:status"`
-	Remark      *string   `json:"remark" gorm:"column:remark"`
-	CreateTime  time.Time `json:"create_time" gorm:"column:create_time"`
+	ID          uint64    `json:"id" gorm:"primaryKey;autoIncrement;not null"`
+	ShortID     string    `json:"short_id" gorm:"size:50;not null;unique;comment:'短链接'"`
+	OriginalURL string    `json:"original_url"gorm:"size:2048;not null;comment:'源链接'"`
+	ExpiredTs   int64     `json:"expired_ts" gorm:"not null;default:0;comment:'过期时间'"`
+	Status      int16     `json:"status" gorm:"default:0;comment:'状态：0正常、1禁用'"`
+	Remark      *string   `json:"remark" gorm:"type:text;collate:utf8mb4_bin;comment:'备注'"`
+	CreateTime  time.Time `json:"create_time" gorm:"autoCreateTime;not null;comment:'创建时间'"`
 }
 
 type GenerateReq struct {

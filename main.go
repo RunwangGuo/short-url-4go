@@ -2,7 +2,6 @@ package main
 
 import (
 	"short-url-4go/src/config"
-	_ "short-url-4go/src/infrastrctures"
 )
 
 func main() {

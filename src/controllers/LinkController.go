@@ -16,7 +16,6 @@ import (
 
 type LinkController struct {
 	interfaces.ILinkService
-	//interfaces.IAccessLogService
 	Logger *zap.Logger
 }
 
@@ -32,26 +31,24 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 }
 
 func (l *LinkController) Generate(ctx iris.Context) {
-	// 校验 Token
-	headerToken := ctx.GetHeader("Authorization")
-	if headerToken == "" || headerToken != config.EnvVariables.Token {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("请提供正确的安全码")
-		return
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
 	}
+
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
 
 	// 解析请求体
 	var params models.GenerateReq
-	if err := ctx.ReadJSON(&params); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("参数解析错误")
-		return
-	}
 
 	// 调用Service处理逻辑
 	//results, err := l.ILinkService.Generate(params.URLs, params.ExpiredTs)
 	results := make(map[string]string)
 	for _, url := range params.URLs {
+		l.Logger.Info("请求生成短链的长链接是" + url)
 		// 调用服务层生成短链接
 		shortLink, err := l.ILinkService.Generate(url, params.ExpiredTs)
 		if err != nil {
@@ -77,6 +74,15 @@ func (l *LinkController) Generate(ctx iris.Context) {
 }
 
 func (l *LinkController) Search(ctx iris.Context) {
+	// 获取所有请求头
+	headers := ctx.Request().Header
+	headersMap := make(map[string][]string)
+	for key, values := range headers {
+		headersMap[key] = values
+	}
+
+	// 将请求头记录到日志
+	l.Logger.Info("Request Headers", zap.Any("headers", headersMap))
 
 	// 获取查询参数
 	keyword := ctx.URLParamDefault("keyword", "")
