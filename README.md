@@ -3,6 +3,10 @@ short-url的Go版本
 
 🙏特别感谢Mehul Gohil和Arron两位优秀的创作者，这个项目分别从两位的https://github.com/mehulgohil/shorti.fy和https://github.com/ArronYR/short-url获得了灵感！
 
+ 🏝️项目版本
+
+- { node: v18.20.5,  go: go1.22.5 }
+
 🫧设置环境变量
 
 |      名称       |        值        |

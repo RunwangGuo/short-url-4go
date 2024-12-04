@@ -302,6 +302,7 @@ func (l *LinkService) Redirect(shortID string, headers http.Header) (string, err
 				ReqHeaders: headerString.String(),
 				CreateTime: time.Now(),
 			}
+			l.Logger.Info("Creating access log", zap.Any("accessLog", accessLog))
 			if err := l.Create(accessLog); err != nil {
 				l.Logger.Error("Failed to add access log")
 			}

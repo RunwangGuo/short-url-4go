@@ -12,7 +12,7 @@ const (
 type Link struct {
 	ID          uint64         `json:"id" gorm:"primaryKey;autoIncrement;not null"`
 	ShortID     string         `json:"short_id" gorm:"size:50;not null;unique;comment:'短链接'"`
-	OriginalURL string         `json:"original_url"gorm:"size:2048;not null;comment:'源链接'"`
+	OriginalURL string         `json:"original_url" gorm:"size:2048;not null;comment:'源链接'"`
 	ExpiredTs   int64          `json:"expired_ts" gorm:"not null;default:0;comment:'过期时间'"`
 	Status      LinkStatusEnum `json:"status" gorm:"default:0;comment:'状态：0正常、1禁用'"`
 	Remark      *string        `json:"remark" gorm:"type:text;collate:utf8mb4_bin;comment:'备注'"`
