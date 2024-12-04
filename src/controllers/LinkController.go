@@ -33,10 +33,18 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 
 	// 调用服务处理重定向逻辑
 	redirectURL, err := l.ILinkService.Redirect(shortID, ctx.Request().Header)
+	l.Logger.Info("Redirect", zap.Any("redirectURL", redirectURL))
+
 	if err != nil {
 		_ = ctx.StopWithJSON(iris.StatusInternalServerError, err)
+		return
 	}
-	ctx.Redirect(*redirectURL, http.StatusTemporaryRedirect)
+	if redirectURL == "404" {
+		ctx.StatusCode(iris.StatusNotFound)
+		ctx.JSON(iris.Map{"error": shortID + "  源链接未找到"})
+		return
+	}
+	ctx.Redirect(redirectURL, http.StatusTemporaryRedirect)
 }
 
 func (l *LinkController) Generate(ctx iris.Context) {

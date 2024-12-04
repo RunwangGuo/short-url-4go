@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/kataras/iris/v12/x/errors"
 	"go.uber.org/zap"
 	"net/http"
@@ -283,7 +284,7 @@ func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int
 	return links, int(total), nil
 }*/
 
-func (l *LinkService) Redirect(shortID string, headers http.Header) (*string, error) {
+func (l *LinkService) Redirect(shortID string, headers http.Header) (string, error) {
 	// 如果启用了访问日志功能，记录请求头信息
 	if config.EnvVariables.AccessLog {
 		go func(shortID string, headers http.Header) {
@@ -309,35 +310,49 @@ func (l *LinkService) Redirect(shortID string, headers http.Header) (*string, er
 
 	// 检查缓存是否存在
 	cache, err := l.Get(shortID)
-	if err != nil && cache != nil {
+	if cache == "" || err != nil {
+		l.Logger.Info("获得缓存失败", zap.String("cache是", cache), zap.Error(err))
+
+	}
+	if err != nil && cache != "" {
+		l.Logger.Info("缓存中存在" + shortID + "对应的OriginalURL，值是" + cache)
 		return cache, nil
 	}
 
 	// 查询数据库，获取短链接对应的原始链接
 	record, err := l.FindByCondition("short_id = ?", shortID)
 	if err != nil {
-		return nil, err
+		return "", err
+	}
+
+	if record == nil {
+		return "404", err
 	}
 
 	// 检查链接是否已经被禁用
-	if record.Status == models.LinkStatusDisabled {
-		return nil, errors.New("link is disabled")
+	if record.Status == models.Disabled {
+		return "", errors.New("link is disabled")
 	}
 
 	// 检查链接是否已经过期
 	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix() {
-		return nil, errors.New("link is expired")
+		return "", errors.New("link is expired")
 	}
 
 	// 缓存并返回原始链接
+	l.Logger.Info("shortID是" + shortID)
+	l.Logger.Info("OriginalURL是" + record.OriginalURL)
 	_ = l.Set(shortID, record.OriginalURL)
-	return &record.OriginalURL, nil
+	cache, _ = l.Get(shortID)
+	l.Logger.Info("缓存中" + shortID + "对应的OriginalURL是" + cache)
+	return record.OriginalURL, nil
 }
 
 // Search Search处理逻辑
 func (l *LinkService) Search(params *models.SearchParams) (*models.SearchResponse, error) {
 	// 获取分页数据
 	paginationResult, err := l.Pagination(params)
+	fmt.Print(paginationResult)
 	if err != nil {
 		return nil, err
 	}

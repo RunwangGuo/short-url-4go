@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"short-url-4go/src/infrastrctures"
 	"short-url-4go/src/models"
@@ -38,6 +39,7 @@ func (m *MySQLHandler) InitMySQLConnection() {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
+		Logger: logger.Default.LogMode(logger.Info), // 打开sql日志
 	})
 	if err != nil {
 		panic(fmt.Sprintf("Unable to connect to MySQL database: %v", err))

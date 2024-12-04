@@ -2,11 +2,6 @@ package models
 
 import "time"
 
-const (
-	LinkStatusEnabled  = 1
-	LinkStatusDisabled = 2
-)
-
 type AccessLog struct {
 	ID         uint64    `json:"id" gorm:"primaryKey;autoIncrement;not null"`
 	ShortID    string    `json:"short_id" gorm:"size:50;not null;comment:'短链ID'"`

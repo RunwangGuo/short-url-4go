@@ -1,6 +1,7 @@
 package infrastrctures
 
 import (
+	"fmt"
 	"github.com/bluele/gcache"
 	"log"
 )
@@ -10,12 +11,18 @@ type CacheClient struct {
 }
 
 // Get 读取缓存
-func (c *CacheClient) Get(key string) (*string, error) {
+func (c *CacheClient) Get(key string) (string, error) {
 	value, err := c.Cache.Get(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return value.(*string), nil
+
+	strValue, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected value type: %T", value)
+	}
+
+	return strValue, nil
 }
 
 // Set 写入缓存

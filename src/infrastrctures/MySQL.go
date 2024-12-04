@@ -62,17 +62,18 @@ func (m *MySQLClient) Update(model interface{}, column string, value interface{}
 // FindByCondition 通用条件查询
 func (m *MySQLClient) FindByCondition(condition string, value string) (*models.Link, error) {
 
-	err := m.DB.Where(condition, value).First(&models.Link{}).Error
+	var link models.Link
+	err := m.DB.Where(condition, value).First(&link).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 如果找不到记录，返回 nil 和 nil 错误
 			return nil, nil
 		}
-		// 如果出現其他錯誤，返回錯誤
+		// 如果出现其他错误，返回错误
 		return nil, fmt.Errorf("查找链接时发生错误: %v", err)
 	}
 
-	return &models.Link{}, nil
+	return &link, nil
 }
 
 // CountByCondition 通用条件计数
@@ -89,7 +90,8 @@ func (m *MySQLClient) Pagination(params *models.SearchParams) (models.Pagination
 	query := m.DB.Model(&models.Link{})
 	if params.Keyword != "" {
 		keyword := "%" + params.Keyword + "%"
-		query = query.Where("short_id LIKE OR original_url LIKE ?", keyword, keyword)
+		print("查询条件是" + keyword)
+		query = query.Where("short_id LIKE ? OR original_url LIKE ?", keyword, keyword)
 	}
 
 	// 获取总记录数
