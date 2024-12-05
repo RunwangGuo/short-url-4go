@@ -1,9 +1,9 @@
 # short-url-4go
 short-url的Go版本
 
-🙏特别感谢Mehul Gohil和Arron两位优秀的创作者，这个项目分别从两位的https://github.com/mehulgohil/shorti.fy和https://github.com/ArronYR/short-url获得了灵感！
+🙏 特别感谢Mehul Gohil和Arron两位优秀的创作者，这个项目分别从两位的https://github.com/mehulgohil/shorti.fy和https://github.com/ArronYR/short-url获得了灵感！
 
- 🏝️项目版本
+ 🏝️ 项目版本
 
 - { node: v18.20.5,  go: go1.22.5 }
 
@@ -24,9 +24,65 @@ short-url的Go版本
 |      TOKEN      |  53ROYinHId9qke  |
 |   API_SECRET    |  1FIsiEpxQo5l7H  |
 
+🍉 以下是随机的 50 个不同类型的网站链接，每个链接按行分隔（测试用）：
+
+```
+https://www.google.com  
+https://www.youtube.com  
+https://www.amazon.com  
+https://www.wikipedia.org  
+https://www.reddit.com  
+https://www.netflix.com  
+https://www.facebook.com  
+https://www.twitter.com  
+https://www.instagram.com  
+https://www.linkedin.com  
+https://www.apple.com  
+https://www.microsoft.com  
+https://www.github.com  
+https://www.stackoverflow.com  
+https://www.khanacademy.org  
+https://www.coursera.org  
+https://www.medium.com  
+https://www.bbc.com  
+https://www.cnn.com  
+https://www.nytimes.com  
+https://www.aliexpress.com  
+https://www.taobao.com  
+https://www.jd.com  
+https://www.imdb.com  
+https://www.soundcloud.com  
+https://www.spotify.com  
+https://www.twitch.tv  
+https://www.pinterest.com  
+https://www.deviantart.com  
+https://www.quora.com  
+https://www.etsy.com  
+https://www.adobe.com  
+https://www.paypal.com  
+https://www.dropbox.com  
+https://www.weibo.com  
+https://www.zhihu.com  
+https://www.tiktok.com  
+https://www.salesforce.com  
+https://www.samsung.com  
+https://www.nike.com  
+https://www.hulu.com  
+https://www.airbnb.com  
+https://www.booking.com  
+https://www.tripadvisor.com  
+https://www.uber.com  
+https://www.zoom.us  
+https://www.slack.com  
+https://www.upwork.com  
+https://www.fiverr.com  
+https://www.wix.com  
+https://www.shopify.com  
+```
+
 # 参考
 
-🙏感谢以下开源项目：
+🙏 感谢以下开源项目：
 
 - https://github.com/go-gorm/gorm
 - https://github.com/bluele/gcache
@@ -39,7 +95,7 @@ short-url的Go版本
 - https://github.com/umijs/umi
 - https://github.com/alibaba/hooks
 
-🙏感谢以下作者，他们写了很多优秀的文章
+🙏 感谢以下作者，他们写了很多优秀的文章
 
 - gorm官方文档  https://gorm.io/zh_CN/docs/query.html
 - material-ui官方文档  https://mui.org.cn/material-ui/getting-started/、https://mui.com/x/react-data-grid/getting-started/
