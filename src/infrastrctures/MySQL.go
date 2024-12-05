@@ -43,24 +43,43 @@ func (m *MySQLClient) Create(data models.AccessLog) error {
 	return nil
 }*/
 
-func (m *MySQLClient) Create(data interface{}) error {
+/*func (m *MySQLClient) Create(data interface{}) error {
 	err := m.DB.Create(data).Error
+	if err != nil {
+		return fmt.Errorf("新增记录时发生错误: %v", err)
+	}
+	return nil
+}*/
+
+// CreateLink 创建Link表
+func (m *MySQLClient) CreateLink(link *models.Link) error {
+	err := m.DB.Create(link).Error
 	if err != nil {
 		return fmt.Errorf("新增记录时发生错误: %v", err)
 	}
 	return nil
 }
 
-// Update 通用更新方法
-func (m *MySQLClient) Update(model interface{}, column string, value interface{}, query string, values ...interface{}) error {
-	return m.DB.Model(model).
+// CreateAccessLog 创建AccessLog表
+func (m *MySQLClient) CreateAccessLog(accessLog *models.AccessLog) error {
+	err := m.DB.Create(accessLog).Error
+	if err != nil {
+		return fmt.Errorf("新增记录时发生错误: %v", err)
+	}
+	return nil
+}
+
+// UpdateLink 更新Link表
+func (m *MySQLClient) UpdateLink(column string, value interface{}, query string, values ...interface{}) error {
+	return m.DB.Model(&models.Link{}).
 		Where(query, values...).
 		Update(column, value).
 		Error
 }
 
-// FindByCondition 通用条件查询
-func (m *MySQLClient) FindByCondition(condition string, value string) (*models.Link, error) {
+// FindLinkByCondition 查询Link表
+// TODO: 一个表一个操作模型
+func (m *MySQLClient) FindLinkByCondition(condition string, value string) (*models.Link, error) {
 
 	var link models.Link
 	err := m.DB.Where(condition, value).First(&link).Error
@@ -76,16 +95,32 @@ func (m *MySQLClient) FindByCondition(condition string, value string) (*models.L
 	return &link, nil
 }
 
-// CountByCondition 通用条件计数
-func (m *MySQLClient) CountByCondition(table interface{}, condition string, value string) int64 {
+/*func (m *MySQLClient) FindByCondition(condition string, value string) (*models.AccessLog, error) {
+
+	var ac models.AccessLog
+	err := m.DB.Where(condition, value).First(&ac).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 如果找不到记录，返回 nil 和 nil 错误
+			return nil, nil
+		}
+		// 如果出现其他错误，返回错误
+		return nil, fmt.Errorf("查找链接时发生错误: %v", err)
+	}
+
+	return &ac, nil
+}*/
+
+// CountAccessLogByCondition 统计AccessLog表
+func (m *MySQLClient) CountAccessLogByCondition(condition string, value string) int64 {
 	var count int64
-	m.DB.Model(&table).Where(condition, value).Count(&count)
+	m.DB.Model(&models.AccessLog{}).Where(condition, value).Count(&count)
 	//m.DB.Model((&User{}).Where(condition, value).Count(&count)
 	return count
 }
 
-// Pagination 获取分页数据
-func (m *MySQLClient) Pagination(params *models.SearchParams) (models.PaginationResult, error) {
+// PaginationLink 分页查询Link表
+func (m *MySQLClient) PaginationLink(params *models.SearchParams) (models.PaginationResult, error) {
 	// 初始化
 	query := m.DB.Model(&models.Link{})
 	if params.Keyword != "" {

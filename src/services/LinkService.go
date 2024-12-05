@@ -34,7 +34,7 @@ func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
 
 /*// FindByOriginalURL 根据原始链接查找记录
 func (l *LinkService) FindByOriginalURL(url string) (*models.Link, error) {
-	record, err := l.FindByCondition("original_url = ?", url)
+	record, err := l.FindLinkByCondition("original_url = ?", url)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
 
 /*// FindByShortID 根据ShortID查找记录
 func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
-	record, err := l.FindByCondition("short_id = ?", shortId)
+	record, err := l.FindLinkByCondition("short_id = ?", shortId)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (l *LinkService) FindByShortID(shortId string) (*models.Link, error) {
 
 /*// CheckShortIDUsed 检查 ShortID 是否已被使用
 func (l *LinkService) CheckShortIDUsed(shortId string) (bool, error) {
-	record, err := l.FindByCondition("short_id = ?", shortId)
+	record, err := l.FindLinkByCondition("short_id = ?", shortId)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +103,7 @@ func (l *LinkService) Create(data *models.Link) error {
 func (l *LinkService) Generate(url string, expiredTs int64) (string, error) {
 
 	// 检查是否存在相同的原始链接
-	record, err := l.FindByCondition("original_url = ?", url)
+	record, err := l.FindLinkByCondition("original_url = ?", url)
 	if err != nil && record != nil && record.ShortID != "" {
 		return record.ShortID, nil
 	}
@@ -112,7 +112,7 @@ func (l *LinkService) Generate(url string, expiredTs int64) (string, error) {
 	var shortID string
 	for i := 0; i < 3; i++ {
 		shortID = utils.GenerateShortID()
-		used, _ := l.FindByCondition("short_id = ?", shortID)
+		used, _ := l.FindLinkByCondition("short_id = ?", shortID)
 		if used == nil {
 			break
 		}
@@ -128,7 +128,7 @@ func (l *LinkService) Generate(url string, expiredTs int64) (string, error) {
 		Remark:      nil,
 		CreateTime:  time.Now(),
 	}
-	err = l.Create(link)
+	err = l.CreateLink(link)
 	if err != nil {
 		return "", err
 	}
@@ -294,13 +294,13 @@ func (l *LinkService) Redirect(shortID string, headers string) (string, error) {
 							}
 						}*/
 			// 记录访问日志
-			accessLog := models.AccessLog{
+			accessLog := &models.AccessLog{
 				ShortID:    shortID,
 				ReqHeaders: headers,
 				CreateTime: time.Now(),
 			}
 			l.Logger.Info("Creating access log", zap.Any("accessLog", accessLog))
-			if err := l.Create(&accessLog); err != nil {
+			if err := l.CreateAccessLog(accessLog); err != nil {
 				l.Logger.Error("Failed to add access log")
 			}
 		}(shortID, headers)
@@ -318,7 +318,7 @@ func (l *LinkService) Redirect(shortID string, headers string) (string, error) {
 	}
 
 	// 查询数据库，获取短链接对应的原始链接
-	record, err := l.FindByCondition("short_id = ?", shortID)
+	record, err := l.FindLinkByCondition("short_id = ?", shortID)
 	if err != nil {
 		return "", err
 	}
@@ -351,7 +351,7 @@ func (l *LinkService) Redirect(shortID string, headers string) (string, error) {
 // Search Search处理逻辑
 func (l *LinkService) Search(params *models.SearchParams) (*models.SearchResponse, error) {
 	// 获取分页数据
-	paginationResult, err := l.Pagination(params)
+	paginationResult, err := l.PaginationLink(params)
 	fmt.Print(paginationResult)
 	if err != nil {
 		return nil, err
@@ -363,7 +363,7 @@ func (l *LinkService) Search(params *models.SearchParams) (*models.SearchRespons
 		// 如果启用了访问日志功能，获取访问次数
 		for _, link := range paginationResult.Records {
 			// 获取访问次数
-			hits := l.CountByCondition(models.AccessLog{}, "short_id = ?", link.ShortID)
+			hits := l.CountAccessLogByCondition("short_id = ?", link.ShortID)
 			hitsMap[link.ShortID] = hits
 		}
 	}
@@ -425,7 +425,7 @@ func (l *LinkService) UpdateStatus(targets []string, status string) error {
 }*/
 
 func (l *LinkService) UpdateStatus(targets []string, status models.LinkStatusEnum) error {
-	return l.Update(&models.Link{}, "status", status, "short_id IN ?", targets)
+	return l.UpdateLink("status", status, "short_id IN ?", targets)
 }
 
 /*func (l *LinkService) UpdateRemark (targets []string, remark string) error {
@@ -440,7 +440,7 @@ func (l *LinkService) UpdateStatus(targets []string, status models.LinkStatusEnu
 */
 
 func (l *LinkService) UpdateRemark(targets []string, remark string) error {
-	return l.Update(&models.Link{}, "remark", remark, "short_id IN ?", targets)
+	return l.UpdateLink("remark", remark, "short_id IN ?", targets)
 }
 
 /*// UpdateExpired 批量更新过期时间
@@ -466,5 +466,5 @@ func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
 
 // UpdateExpired 批量更新过期时间
 func (l *LinkService) UpdateExpired(targets []string, expiredTs int64) error {
-	return l.Update(&models.Link{}, "expired_ts", expiredTs, "short_id IN ?", targets)
+	return l.UpdateLink("expired_ts", expiredTs, "short_id IN ?", targets)
 }
