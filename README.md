@@ -23,7 +23,6 @@ short-url的Go版本
 |   ACCESS_LOG    |       true       |
 |      TOKEN      |  53ROYinHId9qke  |
 |   API_SECRET    |  1FIsiEpxQo5l7H  |
-|                 |                  |
 
 # 参考
 
