@@ -8,7 +8,3 @@ type AccessLog struct {
 	ReqHeaders string    `json:"req_headers" gorm:"type:longtext;comment:'请求头'"`
 	CreateTime time.Time `json:"create_time" gorm:"autoCreateTime;not null;comment:'创建时间'"`
 }
-
-func (AccessLog) TableName() string {
-	return "access_log"
-}

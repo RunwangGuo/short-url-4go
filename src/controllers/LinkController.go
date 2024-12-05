@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"short-url-4go/src/interfaces"
 	"short-url-4go/src/models"
+	"strings"
 	"time"
 )
 
@@ -31,19 +32,40 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 	shortID := ctx.Params().Get("short_id")
 	l.Logger.Info("Request ShortID", zap.String("shortID", shortID))
 
+	// 将 headersMap 转为字符串
+	var headerString strings.Builder
+	for key, values := range headersMap {
+		for _, value := range values {
+			headerString.WriteString(key + ": " + value + "\n")
+		}
+	}
+
 	// 调用服务处理重定向逻辑
-	redirectURL, err := l.ILinkService.Redirect(shortID, ctx.Request().Header)
+	redirectURL, err := l.ILinkService.Redirect(shortID, headerString.String())
 	l.Logger.Info("Redirect", zap.Any("redirectURL", redirectURL))
 
-	if err != nil {
-		_ = ctx.StopWithJSON(iris.StatusInternalServerError, err)
-		return
-	}
 	if redirectURL == "404" {
 		ctx.StatusCode(iris.StatusNotFound)
 		ctx.JSON(iris.Map{"error": shortID + "  源链接未找到"})
 		return
 	}
+	if redirectURL == "410" {
+		ctx.StatusCode(iris.StatusGone)
+		ctx.JSON(iris.Map{"error": shortID + "  源链接被禁用"})
+		return
+	}
+
+	if redirectURL == "411" {
+		ctx.StatusCode(iris.StatusGone)
+		ctx.JSON(iris.Map{"error": shortID + "  源链接已过期"})
+		return
+	}
+
+	if err != nil {
+		_ = ctx.StopWithJSON(iris.StatusInternalServerError, err)
+		return
+	}
+
 	ctx.Redirect(redirectURL, http.StatusTemporaryRedirect)
 }
 

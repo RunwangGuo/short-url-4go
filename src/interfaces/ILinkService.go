@@ -1,12 +1,11 @@
 package interfaces
 
 import (
-	"net/http"
 	"short-url-4go/src/models"
 )
 
 type ILinkService interface {
-	Redirect(shortID string, headers http.Header) (string, error)
+	Redirect(shortID string, headers string) (string, error)
 	Generate(url string, expiredTs int64) (string, error)
 	//Generate(urls []string, expiredTs int64) (map[string]string, error)
 	//FindByOriginalURL(url string) (*models.Link, error) //根据原始链接查找记录

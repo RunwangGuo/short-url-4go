@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12/x/errors"
 	"go.uber.org/zap"
-	"net/http"
 	"short-url-4go/src/config"
 	"short-url-4go/src/interfaces"
 	"short-url-4go/src/models"
 	"short-url-4go/src/utils"
-	"strings"
 	"time"
 )
 
@@ -284,26 +282,25 @@ func (l *LinkService) Search(keyword string, page, size int) ([]models.Link, int
 	return links, int(total), nil
 }*/
 
-func (l *LinkService) Redirect(shortID string, headers http.Header) (string, error) {
+func (l *LinkService) Redirect(shortID string, headers string) (string, error) {
 	// 如果启用了访问日志功能，记录请求头信息
 	if config.EnvVariables.AccessLog {
-		go func(shortID string, headers http.Header) {
-			// 将请求头转为字符串
-			var headerString strings.Builder
-			for key, values := range headers {
-				for _, value := range values {
-					headerString.WriteString(key + ": " + value + "\n")
-				}
-			}
-
+		go func(shortID string, headers string) {
+			/*			// 将请求头转为字符串
+						var headerString strings.Builder
+						for key, values := range headers {
+							for _, value := range values {
+								headerString.WriteString(key + ": " + value + "\n")
+							}
+						}*/
 			// 记录访问日志
 			accessLog := models.AccessLog{
 				ShortID:    shortID,
-				ReqHeaders: headerString.String(),
+				ReqHeaders: headers,
 				CreateTime: time.Now(),
 			}
 			l.Logger.Info("Creating access log", zap.Any("accessLog", accessLog))
-			if err := l.Create(accessLog); err != nil {
+			if err := l.Create(&accessLog); err != nil {
 				l.Logger.Error("Failed to add access log")
 			}
 		}(shortID, headers)
@@ -332,13 +329,15 @@ func (l *LinkService) Redirect(shortID string, headers http.Header) (string, err
 
 	// 检查链接是否已经被禁用
 	if record.Status == models.Disabled {
-		return "", errors.New("link is disabled")
+		return "410", errors.New("link is disabled")
 	}
 
 	// 检查链接是否已经过期
-	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix() {
-		return "", errors.New("link is expired")
+	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix()*1000 {
+		return "411", errors.New("link is expired")
 	}
+
+	l.Logger.Info("", zap.Int64("记录的时间是", record.ExpiredTs), zap.Int64("当前的时间是", time.Now().Unix()))
 
 	// 缓存并返回原始链接
 	l.Logger.Info("shortID是" + shortID)
