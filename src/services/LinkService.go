@@ -333,11 +333,11 @@ func (l *LinkService) Redirect(shortID string, headers string) (string, error) {
 	}
 
 	// 检查链接是否已经过期
-	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix()*1000 {
+	if record.ExpiredTs > 0 && record.ExpiredTs < time.Now().Unix() {
 		return "411", errors.New("link is expired")
 	}
 
-	l.Logger.Info("", zap.Int64("记录的时间是", record.ExpiredTs), zap.Int64("当前的时间是", time.Now().Unix()))
+	l.Logger.Info("", zap.Int64("记录的时间是", record.ExpiredTs), zap.Int64("", time.Now().Unix()))
 
 	// 缓存并返回原始链接
 	l.Logger.Info("shortID是" + shortID)

@@ -44,22 +44,37 @@ func (l *LinkController) Redirect(ctx iris.Context) {
 	redirectURL, err := l.ILinkService.Redirect(shortID, headerString.String())
 	l.Logger.Info("Redirect", zap.Any("redirectURL", redirectURL))
 
-	if redirectURL == "404" {
+	switch {
+	case redirectURL == "404":
 		ctx.StatusCode(iris.StatusNotFound)
 		ctx.JSON(iris.Map{"error": shortID + "  源链接未找到"})
 		return
-	}
-	if redirectURL == "410" {
+	case redirectURL == "410":
 		ctx.StatusCode(iris.StatusGone)
 		ctx.JSON(iris.Map{"error": shortID + "  源链接被禁用"})
 		return
-	}
-
-	if redirectURL == "411" {
+	case redirectURL == "411":
 		ctx.StatusCode(iris.StatusGone)
 		ctx.JSON(iris.Map{"error": shortID + "  源链接已过期"})
 		return
 	}
+
+	/*	if redirectURL == "404" {
+			ctx.StatusCode(iris.StatusNotFound)
+			ctx.JSON(iris.Map{"error": shortID + "  源链接未找到"})
+			return
+		}
+		if redirectURL == "410" {
+			ctx.StatusCode(iris.StatusGone)
+			ctx.JSON(iris.Map{"error": shortID + "  源链接被禁用"})
+			return
+		}
+
+		if redirectURL == "411" {
+			ctx.StatusCode(iris.StatusGone)
+			ctx.JSON(iris.Map{"error": shortID + "  源链接已过期"})
+			return
+		}*/
 
 	if err != nil {
 		_ = ctx.StopWithJSON(iris.StatusInternalServerError, err)
